@@ -1,0 +1,132 @@
+# 0. 필요 라이브러리 설치
+!pip install datasets transformers scikit-learn torch sentencepiece
+
+# 1. 라이브러리 임포트
+from datasets import load_dataset
+from transformers import (
+    AutoTokenizer,
+    AutoModelForSequenceClassification,
+    Trainer,
+    TrainingArguments
+)
+import torch
+from sklearn.metrics import accuracy_score
+
+
+
+# 2. KoBERT 토크나이저 로드
+tokenizer = AutoTokenizer.from_pretrained("skt/kobert-base-v1")
+print("✅ KoBERT 토크나이저 로드 완료")
+
+
+# 3. CSV 파일 → Hugging Face Dataset 로드
+dataset = load_dataset("csv", data_files={"train": "review.csv"})
+print("✅ CSV 로드 완료")
+
+# 데이터 컬럼명 확인
+print("📊 데이터 컬럼:", dataset["train"].column_names)
+# 출력 예) ["review", "label"]
+
+# 4. 토크나이저 적용 함수
+################################
+
+
+def tokenize_function(examples):
+    return tokenizer(examples["review"], padding="max_length", truncation=True, max_length=128, return_token_type_ids=False )
+
+
+# 5. 전체 데이터셋에 토큰화 적용
+
+tokenized_dataset = dataset.map(tokenize_function, batched=True)
+
+# 원본 컬럼 "review" 삭제 (이미 토큰으로 변환됨)
+tokenized_dataset = tokenized_dataset.remove_columns(["review"])
+
+# PyTorch Tensor 형식으로 세팅
+tokenized_dataset.set_format("torch")
+print("✅ 토크나이징 및 텐서 변환 완료")
+
+# 6. Train-Test Split (80% 훈련, 20% 테스트)
+
+split_datasets = tokenized_dataset["train"].train_test_split(test_size=0.2)
+tokenized_dataset = split_datasets  # 업데이트
+
+print("✅ Train/Test 분할 완료")
+print("📊 Train 데이터 개수:", len(tokenized_dataset["train"]))
+print("📊 Test 데이터 개수:", len(tokenized_dataset["test"]))
+
+
+
+# 7. KoBERT 모델 로드 (단일 라벨 분류)
+# 예: 라벨 범위가 0~6 총 7개면 num_labels=7
+model = AutoModelForSequenceClassification.from_pretrained(
+    "skt/kobert-base-v1",
+    num_labels=7
+)
+print("✅ KoBERT 모델 로드 완료")
+
+# 라벨이 float 또는 문자열이면 변환
+def cast_to_int(example):
+    example["label"] = int(example["label"])  # 혹은 np.int64
+    return example
+
+tokenized_dataset = tokenized_dataset.map(cast_to_int)
+
+
+
+import os
+os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
+
+# 8. Trainer 설정 (배치 크기 조정 및 최적화)
+training_args = TrainingArguments(
+    output_dir='./results',       # 체크포인트 및 학습 로그 저장 폴더
+    num_train_epochs=50,          # 학습 Epoch 수
+    per_device_train_batch_size=4,  # ✅ GPU 메모리 최적화 (256 → 4로 조정)
+    per_device_eval_batch_size=4,
+    save_total_limit=2,           # 체크포인트 저장 개수 제한 (최신 2개만 유지)
+    eval_strategy="epoch",        # ✅ 매 epoch마다 검증 수행
+    logging_strategy="steps",     # ✅ Training Loss가 로그에 출력되도록 설정
+    logging_steps=10,             # ✅ 10 스텝마다 Training Loss 출력
+    save_strategy="epoch",        # ✅ Epoch 단위로 체크포인트 저장
+    logging_dir='./logs',         # 로그 저장 경로
+    save_steps=500,               # 체크포인트 저장 빈도
+    report_to="none"              # ✅ W&B 비활성화 (필요하면 "wandb"로 변경 가능)
+)
+
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=tokenized_dataset["train"],
+    eval_dataset=tokenized_dataset["test"]
+)
+
+# 🚀 학습 시작
+trainer.train()
+
+# ✅ Training Loss 로그 확인
+for log in trainer.state.log_history:
+    print(log)
+
+
+# 9. 모델 학습
+
+print("🚀 학습 시작!")
+trainer.train()
+print("🚀 학습 완료!")
+
+
+# 10. 최종 평가 (Trainer 사용)
+
+print("🔍 테스트 세트 평가 시작...")
+predictions = trainer.predict(tokenized_dataset["test"])
+
+# 예측 로짓에서 argmax
+preds = torch.argmax(torch.tensor(predictions.predictions), dim=1)
+
+# 실제 라벨
+labels = tokenized_dataset["test"]["label"][:]
+
+# 정확도 계산
+acc = accuracy_score(labels, preds.tolist())
+print(f"🎯 최종 정확도: {acc:.4f}")
+
