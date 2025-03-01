@@ -44,16 +44,12 @@ for i in range(750, 1000):
 
     # 페이지가 완전히 로드될 때까지 대기
     WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-
     print("페이지 로드 완료")
 
-    # 페이지 소스 가져와서 파싱
-    soup = BeautifulSoup(driver.page_source, "lxml")
-
+    soup = BeautifulSoup(driver.page_source, "lxml") # 페이지 소스 가져와서 파싱
     # 리뷰 포함된 div 찾기 (답글 제외)
     review_divs = soup.find_all('div', {'class': 'r1bctolv atm_c8_1sjzizj atm_g3_1dgusqm atm_26_lfmit2_13uojos atm_5j_1y44olf_13uojos atm_l8_1s2714j_13uojos dir dir-ltr'})
 
-    # 엑셀 파일에 review 추가하기
     with open("C:/Users/USER/Desktop/review output.csv", 'a', newline='') as f:
         writer = csv.writer(f)
 
