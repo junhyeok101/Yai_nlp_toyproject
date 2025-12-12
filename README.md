@@ -1,59 +1,65 @@
-# YAI 프로젝트: KoBERT 기반 텍스트 분류 학습 과정
+YAI Toy Project: KoBERT-Based Text Classification Training Pipeline
+Overview
 
-## 개요
-본 프로젝트에서는 한국어 BERT 계열 모델(KoBERT)을 활용하여 **문장을 입력받아 사전 정의된 카테고리로 분류하는 모델**을 학습합니다.  
-입력 데이터는 CSV 파일 형태로 제공되며, 각 문장은 해당 문장을 설명하는 카테고리 레이블과 함께 주어집니다.  
+This project uses a Korean BERT variant (KoBERT) to train a text classification model that assigns each input sentence to one of the predefined categories.
+Training data is provided in CSV format, where each sentence is paired with its corresponding label.
 
----
+Training Pipeline
+1) Tokenization
 
-## 학습 파이프라인
+Input sentences are tokenized into subword units using the BERT tokenizer.
 
-### 1) 토큰화 (Tokenization)
-- 입력 문장은 BERT 토크나이저를 통해 서브워드 단위로 분해됩니다.
-- 예시 문장:  
-  `"숙소가 깨끗하고 서비스가 좋았습니다."`
-- 토큰화 결과:  ["[CLS]", "숙소", "가", "깨끗", "##하", "고", "서", "##비", "##스", "가", "좋", "##았", "##습", "##니다", ".", "[SEP]"]
+Example sentence:
+"숙소가 깨끗하고 서비스가 좋았습니다."
 
+Tokenized output:
+["[CLS]", "숙소", "가", "깨끗", "##하", "고", "서", "##비", "##스", "가", "좋", "##았", "##습", "##니다", ".", "[SEP]"]
 
-- 각 토큰은 정수 인덱스(input_ids)로 변환되며, **attention_mask**(패딩 구분), **token_type_ids**(문장 구분 정보)도 생성됩니다.
+Each token is converted into an integer index (input_ids), and additional features such as attention_mask (to distinguish padding) and token_type_ids (sentence segment information) are generated.
 
----
+2) Transformer Encoder (KoBERT)
 
-### 2) Transformer 인코더 (KoBERT)
-- 변환된 토큰 시퀀스는 KoBERT의 Transformer 인코더에 입력됩니다.
-- Self-Attention과 FeedForward 연산을 거쳐 각 토큰은 문맥 정보를 포함한 임베딩 벡터로 변환됩니다.
-- 최종 분류에는 **[CLS] 토큰 벡터** 또는 **Pooling 결과**를 사용합니다.
+The tokenized sequence is processed by the KoBERT Transformer encoder.
 
----
+Through self-attention and feed-forward layers, each token becomes a context-rich embedding.
 
-### 3) 분류 헤드 (Classification Head)
-- KoBERT 출력의 [CLS] 벡터를 입력으로 하는 분류기(Linear Layer)를 추가합니다.
-- 구조:  Linear (Hidden Dimension → Number of Categories)
+For classification, the model uses either the [CLS] token embedding or a pooled representation.
 
+3) Classification Head
 
+A classification layer (Linear layer) is added on top of the KoBERT output.
 
-- 출력은 각 카테고리에 대한 로짓(logits, 점수)입니다.  
-- 예: 0 = 경치, 1 = 서비스, 2 = 청결, ...
+Structure: Linear (Hidden Dimension → Number of Categories)
 
----
+The output is a set of logits (scores) for each category.
+Example: 0 = Scenery, 1 = Service, 2 = Cleanliness, ...
 
-### 4) 학습 과정 (Training)
-1. **Forward Pass**  
- - 문장 입력 → KoBERT 인코더 → [CLS] 벡터 추출 → 분류 레이어 → 로짓 생성  
-2. **Loss 계산**  
- - 예측값과 CSV 레이블(정답)을 비교  
- - 손실 함수: **Cross-Entropy Loss**  
-3. **Backward & Optimizer**  
- - Loss를 역전파하여 KoBERT + 분류기의 가중치 업데이트  
-4. **Epoch 반복**  
- - 데이터셋 전체를 여러 번 학습(Epoch)하여 성능 향상  
+4) Training Procedure
 
----
+Forward Pass
 
-## 정리
-- **입력 데이터:** CSV (문장 + 카테고리 레이블)  
-- **처리 흐름:** 문장 → 토큰화 → KoBERT 인코더 → [CLS] 벡터 → 분류기 → 카테고리 출력  
-- **학습 목표:** 문장의 의미적 특징을 임베딩으로 변환하여 카테고리를 정확히 예측  
-- **최종 결과:** 학습 완료 모델은 새로운 문장을 입력받았을 때 가장 높은 점수를 가진 카테고리를 출력  
+Sentence → KoBERT Encoder → Extract [CLS] Vector → Classification Layer → Logits
 
----
+Loss Calculation
+
+Predictions vs ground-truth labels from the CSV
+
+Loss function: Cross-Entropy Loss
+
+Backward Pass & Optimization
+
+Backpropagation updates both KoBERT and the classifier weights
+
+Epochs
+
+The entire dataset is trained for multiple epochs to gradually improve performance
+
+Summary
+
+Input Format: CSV (sentence + category label)
+
+Pipeline: Sentence → Tokenization → KoBERT Encoder → [CLS] Vector → Classifier → Category
+
+Goal: Convert semantic characteristics of sentences into embeddings to accurately predict categories
+
+Final Output: A trained model that assigns the most likely category to any new input sentence
