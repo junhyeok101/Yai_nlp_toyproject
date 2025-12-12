@@ -1,7 +1,7 @@
 
 
 # KoBERT-Based Text Classification
-##YAI Toy Project 
+## YAI Toy Project 
 This project trains a Korean text classification model using KoBERT.  
 Given an input sentence, the model predicts one of several predefined categories.  
 Training data is provided as a CSV file containing sentences and their labels.
