@@ -1,67 +1,78 @@
-KoBERT-Based Text Classification
 
-This project trains a Korean text classification model using KoBERT.
-Given an input sentence, the model predicts one of several predefined categories.
+
+# KoBERT-Based Text Classification
+##YAI Toy Project 
+This project trains a Korean text classification model using KoBERT.  
+Given an input sentence, the model predicts one of several predefined categories.  
 Training data is provided as a CSV file containing sentences and their labels.
 
-Overview
+---
 
-Model: KoBERT (Korean BERT variant)
+## Overview
 
-Task: Sentence classification
+- Model: KoBERT (Korean BERT variant)  
+- Task: Sentence classification  
+- Input Format: CSV (sentence, label)  
+- Output: Fine-tuned KoBERT model capable of predicting categories for new sentences  
 
-Input Format: CSV (sentence, label)
+---
 
-Output: Fine-tuned KoBERT model capable of predicting categories for new sentences
+## Training Pipeline
 
-Training Pipeline
-1. Tokenization
+### 1. Tokenization
 
 Each sentence is tokenized into subword units using the BERT tokenizer.
 
-Example sentence:
+Example sentence:  
 "숙소가 깨끗하고 서비스가 좋았습니다."
 
-Tokenized output:
+Tokenized output:  
 ["[CLS]", "숙소", "가", "깨끗", "##하", "고", "서", "##비", "##스", "가", "좋", "##았", "##습", "##니다", ".", "[SEP]"]
 
 Generated features:
+- input_ids  
+- attention_mask  
+- token_type_ids
 
-input_ids
+---
 
-attention_mask
+### 2. Transformer Encoder (KoBERT)
 
-token_type_ids
-
-2. Transformer Encoder (KoBERT)
-
-The tokenized sequence is processed by the KoBERT encoder.
-Through self-attention and feed-forward layers, each token becomes a contextualized embedding.
+The tokenized sequence is processed by the KoBERT encoder.  
+Through self-attention and feed-forward layers, each token becomes a contextualized embedding.  
 For classification, the model uses the [CLS] token vector or a pooled output.
 
-3. Classification Head
+---
+
+### 3. Classification Head
 
 A linear classifier is added on top of the KoBERT output.
 
-Structure:
+Structure:  
 Linear (hidden_size → num_categories)
 
 The output consists of logits representing the score for each category.
 
-4. Training Procedure
+---
 
-Forward pass
+### 4. Training Procedure
 
-Sentence → KoBERT → [CLS] vector → Classifier → Logits
+1. Forward pass  
+   Sentence → KoBERT → [CLS] vector → Classifier → Logits  
+2. Loss calculation  
+   Cross-Entropy Loss comparing logits and CSV labels  
+3. Backpropagation and optimization  
+   Updates both the KoBERT encoder and the classification layer  
+4. Epoch iteration  
+   Repeats over the full dataset to improve performance  
 
-Loss calculation
+---
 
-Cross-Entropy Loss comparing logits and CSV labels
+## Summary
 
-Backpropagation and optimization
+- Tokenizes Korean input sentences  
+- Extracts semantic features using KoBERT  
+- Predicts categories through a linear classification layer  
+- Trains using supervised learning with cross-entropy loss  
+- Produces a fine-tuned model ready for inference on new sentences  
 
-Updates both the KoBERT encoder and the classification layer
-
-Epoch iteration
-
-Repeats over the full dataset to improve performance
