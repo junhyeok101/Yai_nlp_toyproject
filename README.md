@@ -1,13 +1,23 @@
-YAI Toy Project: KoBERT-Based Text Classification Training Pipeline
+KoBERT-Based Text Classification
+
+This project trains a Korean text classification model using KoBERT.
+Given an input sentence, the model predicts one of several predefined categories.
+Training data is provided as a CSV file containing sentences and their labels.
+
 Overview
 
-This project uses a Korean BERT variant (KoBERT) to train a text classification model that assigns each input sentence to one of the predefined categories.
-Training data is provided in CSV format, where each sentence is paired with its corresponding label.
+Model: KoBERT (Korean BERT variant)
+
+Task: Sentence classification
+
+Input Format: CSV (sentence, label)
+
+Output: Fine-tuned KoBERT model capable of predicting categories for new sentences
 
 Training Pipeline
-1) Tokenization
+1. Tokenization
 
-Input sentences are tokenized into subword units using the BERT tokenizer.
+Each sentence is tokenized into subword units using the BERT tokenizer.
 
 Example sentence:
 "숙소가 깨끗하고 서비스가 좋았습니다."
@@ -15,51 +25,43 @@ Example sentence:
 Tokenized output:
 ["[CLS]", "숙소", "가", "깨끗", "##하", "고", "서", "##비", "##스", "가", "좋", "##았", "##습", "##니다", ".", "[SEP]"]
 
-Each token is converted into an integer index (input_ids), and additional features such as attention_mask (to distinguish padding) and token_type_ids (sentence segment information) are generated.
+Generated features:
 
-2) Transformer Encoder (KoBERT)
+input_ids
 
-The tokenized sequence is processed by the KoBERT Transformer encoder.
+attention_mask
 
-Through self-attention and feed-forward layers, each token becomes a context-rich embedding.
+token_type_ids
 
-For classification, the model uses either the [CLS] token embedding or a pooled representation.
+2. Transformer Encoder (KoBERT)
 
-3) Classification Head
+The tokenized sequence is processed by the KoBERT encoder.
+Through self-attention and feed-forward layers, each token becomes a contextualized embedding.
+For classification, the model uses the [CLS] token vector or a pooled output.
 
-A classification layer (Linear layer) is added on top of the KoBERT output.
+3. Classification Head
 
-Structure: Linear (Hidden Dimension → Number of Categories)
+A linear classifier is added on top of the KoBERT output.
 
-The output is a set of logits (scores) for each category.
-Example: 0 = Scenery, 1 = Service, 2 = Cleanliness, ...
+Structure:
+Linear (hidden_size → num_categories)
 
-4) Training Procedure
+The output consists of logits representing the score for each category.
 
-Forward Pass
+4. Training Procedure
 
-Sentence → KoBERT Encoder → Extract [CLS] Vector → Classification Layer → Logits
+Forward pass
 
-Loss Calculation
+Sentence → KoBERT → [CLS] vector → Classifier → Logits
 
-Predictions vs ground-truth labels from the CSV
+Loss calculation
 
-Loss function: Cross-Entropy Loss
+Cross-Entropy Loss comparing logits and CSV labels
 
-Backward Pass & Optimization
+Backpropagation and optimization
 
-Backpropagation updates both KoBERT and the classifier weights
+Updates both the KoBERT encoder and the classification layer
 
-Epochs
+Epoch iteration
 
-The entire dataset is trained for multiple epochs to gradually improve performance
-
-Summary
-
-Input Format: CSV (sentence + category label)
-
-Pipeline: Sentence → Tokenization → KoBERT Encoder → [CLS] Vector → Classifier → Category
-
-Goal: Convert semantic characteristics of sentences into embeddings to accurately predict categories
-
-Final Output: A trained model that assigns the most likely category to any new input sentence
+Repeats over the full dataset to improve performance
